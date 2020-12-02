@@ -17,7 +17,7 @@ import com.fazecast.jSerialComm.*;
 
 public final class InputListener implements SerialPortMessageListener
 {
-    static String access_token = "BQDzF8_wbdaqLdW0J6I_WC_haJ2sCT-EL1cNKqJiZH3AFcRsDrB8A30NEsY-sdyNhC1yP17SEW11_bnCtS3yWDUrB7kLfB6MfTqd8CRZMc_ZxQxy1FMwyIwZ7RripYBlT2Y6pFFgskl3VpY85LCJq7oihi3XPkcnLJbJ9g9nSbQJLNZbAIDspmZkx6qMBRrDnzs8QSYfpv6DqJRVybscLFbxDh-qXyFzGVCzIfR6sA3P9UaC9RBqUgrG1Mx0QkbgGiZL1AYR0pTIwHCKc9Em";
+    static String access_token = "BQAGpcoBACht5j5-TmSTLPVE-Znx3gRETrstxXupb6gZdfzaFqAVhhjwM4FksUfWJJfdq6kt2E1A7ZXkizW3-CGVlokyNR_LVwJNYTFijKkc8DFZgPVfsiFwt3lQ87fLL5GqpatUOGeLp6K_ps2wtlCIIgjbqOg5gmeVFYB0X8Vw4QDx_-w3PnTa8uXOku_iK-9twLH8nTGNmbZHX9qrPtSY5gxBFzh246Q8ki8KjMZ15_dAYzv3WlUXjayN7WmyC5p_-mFZ__ceOokOOJjw";
 
     public String getRequest(String uri, CloseableHttpClient http_client, ResponseHandler<String> response_handler)
     {
@@ -54,6 +54,7 @@ public final class InputListener implements SerialPortMessageListener
         catch (IOException e)
         {
             System.out.println("Error: " + e.getMessage());
+            e.printStackTrace();
 
             return null;
         }
@@ -103,9 +104,9 @@ public final class InputListener implements SerialPortMessageListener
     @Override
     public void serialEvent(SerialPortEvent event)
     {
-        String input = new String(event.getReceivedData(), StandardCharsets.UTF_8);
+        String input_raw = new String(event.getReceivedData(), StandardCharsets.UTF_8);
 
-        input = input.substring(0, input.indexOf(":"));
+        String input = input_raw.substring(0, input_raw.indexOf(":"));
         System.out.println(input);
 
         CloseableHttpClient http_client = HttpClients.createDefault();
@@ -150,7 +151,7 @@ public final class InputListener implements SerialPortMessageListener
                 System.out.println(putRequest("https://api.spotify.com/v1/me/player/shuffle?state=" + !shuffle_state, http_client, response_handler));
                 break;
             case "Loop":
-                String new_loop_state = "off";
+                String new_loop_state;
 
                 switch (loop_state)
                 {
@@ -171,7 +172,7 @@ public final class InputListener implements SerialPortMessageListener
                 System.out.println(postRequest("https://api.spotify.com/v1/me/player/previous", http_client, response_handler));
                 break;
             case "Play":
-                String uri = "";
+                String uri;
 
                 if (playing_state)
                 {
@@ -187,8 +188,10 @@ public final class InputListener implements SerialPortMessageListener
             case "Next":
                 System.out.println(postRequest("https://api.spotify.com/v1/me/player/next", http_client, response_handler));
                 break;
-            case "Mute":
-
+            case "Volume":
+                String volume = input_raw.substring(input_raw.indexOf(":") + 1, input_raw.indexOf("\n") - 1);
+                System.out.println("Volume is: " + volume);
+                System.out.println(putRequest("https://api.spotify.com/v1/me/player/volume?volume_percent=" + volume, http_client, response_handler));
                 break;
             default:
                 System.out.println("Invalid input.");
