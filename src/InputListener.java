@@ -16,7 +16,7 @@ import com.fazecast.jSerialComm.*;
 public final class InputListener implements SerialPortMessageListener
 {
     //  authorization to access spotify api - see readme for more details
-    static String access_token = "BQD6zg59xkjuH6kZDryfQ7tRJ-SI-exXR6t8HtbE4445kHC4DaO8LAJxJ6K3Uw5fjXDaVe4YX_oWJxs6iy2X5w18g9EqM52t5gtNyB_Fub08Ph-PwLzaVOD4v06Y1NI-WJ_scaFLt6fpjqGxmgLy5OUbF2USiImcBbdYMppkSp-COvkGPiDvNLjT4TJie6g4AvjfrFDxRoMQx3Tji3S9SSLaH7hLSBcWg5t5pr5cWPvDxI4vDAX36lB7mtEeFTxqpXQlpv_QtQYTyrOIO_79";
+    static String access_token = "";
     //  serial port to connect to
     static SerialPort port;
     //  allows us to send/recieve http requests
