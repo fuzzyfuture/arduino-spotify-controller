@@ -22,8 +22,24 @@ public final class InputListener implements SerialPortMessageListener
 {
     static String access_token = "BQD6zg59xkjuH6kZDryfQ7tRJ-SI-exXR6t8HtbE4445kHC4DaO8LAJxJ6K3Uw5fjXDaVe4YX_oWJxs6iy2X5w18g9EqM52t5gtNyB_Fub08Ph-PwLzaVOD4v06Y1NI-WJ_scaFLt6fpjqGxmgLy5OUbF2USiImcBbdYMppkSp-COvkGPiDvNLjT4TJie6g4AvjfrFDxRoMQx3Tji3S9SSLaH7hLSBcWg5t5pr5cWPvDxI4vDAX36lB7mtEeFTxqpXQlpv_QtQYTyrOIO_79";
     static SerialPort port;
+    static CloseableHttpClient http_client = HttpClients.createDefault();
 
-    public String getRequest(String uri, CloseableHttpClient http_client, ResponseHandler<String> response_handler)
+    static ResponseHandler<String> response_handler = response->
+    {
+        int status = response.getStatusLine().getStatusCode();
+        String msg = response.getStatusLine().getReasonPhrase();
+        String data = "";
+
+        HttpEntity entity = response.getEntity();
+        if (entity != null)
+        {
+            data = EntityUtils.toString(entity);
+        }
+
+        return "Status: " + status + "\n" + "Response: " + msg + "\n" + "Data: " + data;
+    };
+
+    public static String getRequest(String uri, CloseableHttpClient http_client, ResponseHandler<String> response_handler)
     {
         HttpGet req =  new HttpGet(uri);
 
@@ -121,23 +137,6 @@ public final class InputListener implements SerialPortMessageListener
             return;
         }
 
-        CloseableHttpClient http_client = HttpClients.createDefault();
-
-        ResponseHandler<String> response_handler = response->
-        {
-            int status = response.getStatusLine().getStatusCode();
-            String msg = response.getStatusLine().getReasonPhrase();
-            String data = "";
-
-            HttpEntity entity = response.getEntity();
-            if (entity != null)
-            {
-                data = EntityUtils.toString(entity);
-            }
-
-            return "Status: " + status + "\n" + "Response: " + msg + "\n" + "Data: " + data;
-        };
-
         String player_info_raw = getRequest("https://api.spotify.com/v1/me/player", http_client, response_handler);
         JSONObject player_info = null;
 
@@ -212,35 +211,6 @@ public final class InputListener implements SerialPortMessageListener
                 System.out.println("Invalid input.");
                 break;
         }
-        if (input.equals("Next") || input.equals("Prev") || input.equals("Play") || input.equals("Volume"))
-        {
-            try
-            {
-                Thread.sleep(300);
-            }
-            catch (InterruptedException e)
-            {
-                e.printStackTrace();
-            }
-
-            player_info_raw = getRequest("https://api.spotify.com/v1/me/player", http_client, response_handler);
-            player_info = null;
-
-            if (player_info_raw != null)
-            {
-                player_info_raw = player_info_raw.substring(player_info_raw.indexOf("{") - 1);
-                player_info = new JSONObject(player_info_raw);
-            }
-
-            song_data = "";
-
-            if (player_info != null)
-            {
-                song_data = player_info.getJSONObject("item").getJSONArray("artists").getJSONObject(0).getString("name") + " - " + player_info.getJSONObject("item").getString("name") + "\n";
-            }
-
-            port.writeBytes(song_data.getBytes(), song_data.length());
-        }
     }
 
     static public void main(String[] args) throws InterruptedException {
@@ -255,5 +225,41 @@ public final class InputListener implements SerialPortMessageListener
         Thread.sleep(2000);
 
         System.out.println("Started");
+
+        String last_song = "";
+
+        while (true)
+        {
+            try
+            {
+                Thread.sleep(1000);
+            }
+            catch (InterruptedException e)
+            {
+                e.printStackTrace();
+            }
+
+            String player_info_raw = getRequest("https://api.spotify.com/v1/me/player", http_client, response_handler);
+            JSONObject player_info = null;
+
+            if (player_info_raw != null)
+            {
+                player_info_raw = player_info_raw.substring(player_info_raw.indexOf("{") - 1);
+                player_info = new JSONObject(player_info_raw);
+            }
+
+            String song_data = "";
+
+            if (player_info != null)
+            {
+                song_data = player_info.getJSONObject("item").getJSONArray("artists").getJSONObject(0).getString("name") + " - " + player_info.getJSONObject("item").getString("name") + "\n";
+            }
+
+            if (!song_data.equals(last_song))
+            {
+                last_song = song_data;
+                port.writeBytes(song_data.getBytes(), song_data.length());
+            }
+        }
     }
 }
