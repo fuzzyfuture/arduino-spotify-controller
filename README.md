@@ -1,2 +1,4 @@
-# arduino-spotify-controller
- An arduino controller for the Spotify API.
+# Arduino Spotify Controller
+An arduino HID controller for Spotify via the Spotify Web API.
+
+# Installation/Usage
