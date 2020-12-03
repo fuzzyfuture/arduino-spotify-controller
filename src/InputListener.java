@@ -1,4 +1,7 @@
 import java.io.IOException;
+import java.io.InputStream;
+import java.io.OutputStream;
+import java.io.PrintWriter;
 import java.nio.charset.StandardCharsets;
 
 import org.apache.http.HttpEntity;
@@ -17,7 +20,8 @@ import com.fazecast.jSerialComm.*;
 
 public final class InputListener implements SerialPortMessageListener
 {
-    static String access_token = "BQAGpcoBACht5j5-TmSTLPVE-Znx3gRETrstxXupb6gZdfzaFqAVhhjwM4FksUfWJJfdq6kt2E1A7ZXkizW3-CGVlokyNR_LVwJNYTFijKkc8DFZgPVfsiFwt3lQ87fLL5GqpatUOGeLp6K_ps2wtlCIIgjbqOg5gmeVFYB0X8Vw4QDx_-w3PnTa8uXOku_iK-9twLH8nTGNmbZHX9qrPtSY5gxBFzh246Q8ki8KjMZ15_dAYzv3WlUXjayN7WmyC5p_-mFZ__ceOokOOJjw";
+    static String access_token = "BQD6zg59xkjuH6kZDryfQ7tRJ-SI-exXR6t8HtbE4445kHC4DaO8LAJxJ6K3Uw5fjXDaVe4YX_oWJxs6iy2X5w18g9EqM52t5gtNyB_Fub08Ph-PwLzaVOD4v06Y1NI-WJ_scaFLt6fpjqGxmgLy5OUbF2USiImcBbdYMppkSp-COvkGPiDvNLjT4TJie6g4AvjfrFDxRoMQx3Tji3S9SSLaH7hLSBcWg5t5pr5cWPvDxI4vDAX36lB7mtEeFTxqpXQlpv_QtQYTyrOIO_79";
+    static SerialPort port;
 
     public String getRequest(String uri, CloseableHttpClient http_client, ResponseHandler<String> response_handler)
     {
@@ -105,11 +109,20 @@ public final class InputListener implements SerialPortMessageListener
     public void serialEvent(SerialPortEvent event)
     {
         String input_raw = new String(event.getReceivedData(), StandardCharsets.UTF_8);
+        String input = "";
 
-        String input = input_raw.substring(0, input_raw.indexOf(":"));
-        System.out.println(input);
+        if (input_raw.contains(":"))
+        {
+            input = input_raw.substring(0, input_raw.indexOf(":"));
+            System.out.println(input);
+        }
+        else
+        {
+            return;
+        }
 
         CloseableHttpClient http_client = HttpClients.createDefault();
+
         ResponseHandler<String> response_handler = response->
         {
             int status = response.getStatusLine().getStatusCode();
@@ -137,12 +150,14 @@ public final class InputListener implements SerialPortMessageListener
         boolean shuffle_state = false;
         String loop_state = "off";
         boolean playing_state = false;
+        String song_data = "";
 
         if (player_info != null)
         {
             shuffle_state = player_info.getBoolean("shuffle_state");
             loop_state = player_info.getString("repeat_state");
             playing_state = player_info.getBoolean("is_playing");
+            song_data = player_info.getJSONObject("item").getJSONArray("artists").getJSONObject(0).getString("name") + " - " + player_info.getJSONObject("item").getString("name") + "\n";
         }
 
         switch (input)
@@ -197,15 +212,47 @@ public final class InputListener implements SerialPortMessageListener
                 System.out.println("Invalid input.");
                 break;
         }
+        if (input.equals("Next") || input.equals("Prev") || input.equals("Play") || input.equals("Volume"))
+        {
+            try
+            {
+                Thread.sleep(300);
+            }
+            catch (InterruptedException e)
+            {
+                e.printStackTrace();
+            }
+
+            player_info_raw = getRequest("https://api.spotify.com/v1/me/player", http_client, response_handler);
+            player_info = null;
+
+            if (player_info_raw != null)
+            {
+                player_info_raw = player_info_raw.substring(player_info_raw.indexOf("{") - 1);
+                player_info = new JSONObject(player_info_raw);
+            }
+
+            song_data = "";
+
+            if (player_info != null)
+            {
+                song_data = player_info.getJSONObject("item").getJSONArray("artists").getJSONObject(0).getString("name") + " - " + player_info.getJSONObject("item").getString("name") + "\n";
+            }
+
+            port.writeBytes(song_data.getBytes(), song_data.length());
+        }
     }
 
-    static public void main(String[] args)
-    {
-        SerialPort port = SerialPort.getCommPort("COM3");
+    static public void main(String[] args) throws InterruptedException {
+        port = SerialPort.getCommPort("COM3");
         port.openPort();
+        port.setComPortParameters(9600, 8, 1, SerialPort.NO_PARITY);
+        port.setComPortTimeouts(SerialPort.TIMEOUT_SCANNER, 0, 0);
 
         InputListener listener = new InputListener();
         port.addDataListener(listener);
+
+        Thread.sleep(2000);
 
         System.out.println("Started");
     }
