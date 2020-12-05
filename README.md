@@ -1,6 +1,14 @@
 # Arduino Spotify Controller
 An arduino HID controller for Spotify via the Spotify Web API.
 
+# Contents
+* <b>/.idea</b> - Contains project information for IntelliJ
+* <b>/arduino</b> - Contains .ino file to run on Arduino
+* <b>/src</b> - Contains Java files
+* <b>/target/classes</b> - Contains information on Java classes for compiler
+* <b>/pom.xml</b> - Maven dependencies
+* <b>/schem.png</b> - Breadboard diagram of circuit
+
 # Installation/Usage
 Keep in mind that this project was strictly intended for my own personal use - it is not designed with user-friendliness in mind whatsoever. The code must be manually edited and compiled in order to be used.
 ## Arduino
