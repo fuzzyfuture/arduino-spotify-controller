@@ -54,7 +54,7 @@ void setup()
   lcd.begin(LCD_COLS, LCD_ROWS);
 
   //  reserve 
-  serial_input.reserve(200);
+  serial_input.reserve(1000);
 }
 
 void loop()
