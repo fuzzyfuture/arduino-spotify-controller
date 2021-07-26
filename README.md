@@ -1,5 +1,6 @@
 # Arduino Spotify Controller
 An arduino HID controller for Spotify via the Spotify Web API.
+Final project for CS 207 - Building Interactive Gadgets at the University of Regina.
 
 # Contents
 * <b>/.idea</b> - Contains project information for IntelliJ
